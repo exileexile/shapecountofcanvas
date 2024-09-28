@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <canvas id="canvas" width="760" height="510"
+      >对不起，你的浏览器不支持Canvas</canvas
+    >
+    <script>
+      ;(function () {
+        const canvas = document.getElementById('canvas')
+        const ctx = canvas.getContext('2d')
+        let img = new Image()
+
+        img.src = './image.png' //图片路径
+
+        img.onload = function () {
+          ctx.drawImage(img, 0, 0)
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height) //读取整张图片的像素
+          const data = imageData.data
+          let blackPixelsCount = 0
+
+          for (let i = 0; i < data.length; i += 4) {
+            const r = data[i]
+            const g = data[i + 1]
+            const b = data[i + 2]
+
+            // 计算RGB值为(0, 0, 0)的像素数量
+            if (`${r} ${g} ${b}` === '0 0 0') {
+              blackPixelsCount++
+            }
+          }
+
+          console.log('Total Black Pixels:', blackPixelsCount)
+
+          // 计算黑色图形的数量
+          const shapesCount = countBlackShapes(imageData)
+
+          console.log('Total Black Shapes:', shapesCount)
+        }
+
+        function countBlackShapes(imageData) {
+          const width = imageData.width
+          const height = imageData.height
+          const data = imageData.data
+          let shapesCount = 0
+
+          // 定义四个方向的偏移量（上，下，左，右）
+          const dx = [-1, 1, 0, 0]
+          const dy = [0, 0, -1, 1]
+
+          // 初始化访问标记数组
+          const visited = Array(height)
+            .fill(0)
+            .map(() => Array(width).fill(false))
+
+          // 深度优先搜索函数
+          function dfs(x, y) {
+            visited[x][y] = true
+            for (let i = 0; i < 4; i++) {
+              const newX = x + dx[i]
+              const newY = y + dy[i]
+              if (newX >= 0 && newX < height && newY >= 0 && newY < width) {
+                const index = (newX * width + newY) * 4
+                if (
+                  data[index] === 0 &&
+                  data[index + 1] === 0 &&
+                  data[index + 2] === 0 &&
+                  !visited[newX][newY]
+                ) {
+                  dfs(newX, newY)
+                }
+              }
+            }
+          }
+
+          // 遍历图像的每一个像素
+          for (let x = 0; x < height; x++) {
+            for (let y = 0; y < width; y++) {
+              const index = (x * width + y) * 4
+              if (
+                data[index] === 0 &&
+                data[index + 1] === 0 &&
+                data[index + 2] === 0 &&
+                !visited[x][y]
+              ) {
+                shapesCount++
+                dfs(x, y)
+              }
+            }
+          }
+
+          return shapesCount
+        }
+      })()
+    </script>
+  </body>
+</html>
